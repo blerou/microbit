@@ -1,12 +1,14 @@
-input.onPinPressed(TouchPin.P0, function on_pin_pressed_p0() {
+input.onPinPressed(TouchPin.P0, function() {
     if (gameOn == 1) {
         gameOn = 0
     } else {
         gameOn = 1
     }
-
 })
-input.onButtonPressed(Button.A, function on_button_pressed_a() {
+input.onPinPressed(TouchPin.P1, function () {
+    speed = (speed + 1) % 3
+})
+input.onButtonPressed(Button.A, function() {
     if (dx != 0) {
         dy = dx * -1
         dx = 0
@@ -15,7 +17,7 @@ input.onButtonPressed(Button.A, function on_button_pressed_a() {
         dy = 0
     }
 })
-input.onButtonPressed(Button.B, function on_button_pressed_b() {
+input.onButtonPressed(Button.B, function() {
     if (dx != 0) {
         dy = dx
         dx = 0
@@ -35,10 +37,14 @@ let dy = 0
 let dx = 1
 let gameOn = 1
 let points = [[2, 3], [2, 4], [3,4]]
-let head, x, y, tail
-basic.forever(function on_forever() {
+let speed = 4;
+let head, x, y, tail, sleep
+basic.forever(function() {
+    sleep = speed * 200 + 100
+
     showPoints()
-    basic.pause(500)
+    basic.pause(sleep)
+
     tick += 1
     if (gameOn == 1 && tick % 2 == 0) {
         tail = points.pop()
