@@ -10,21 +10,13 @@ namespace snake {
         readonly y: number;
     }
 
-    let dir: point
-    let changeDirection = false
+    let dir: point, newDir: point
     let speed = 0
     let speedSteps = 0
     let gameOn = GameState.Paused
     let snake: point[] = []
     let egg: point
     let eggCollected = false
-    // init
-    gameOn = GameState.On
-    snake = [{ x: 2, y: 3 }, { x: 2, y: 4 }]
-    dir = { x: 1, y: 0 }
-    speedSteps = 3
-    speed = speedSteps - 1
-    egg = genEgg()
 
     export function switchState() {
         gameOn = gameOn == GameState.On ? GameState.Paused : GameState.On
@@ -35,24 +27,18 @@ namespace snake {
     }
 
     export function turnLeft() {
-        if (!changeDirection) {
-            if (dir.x != 0) {
-                dir = { x: 0, y: dir.x * -1 }
-            } else if (dir.y != 0) {
-                dir = { x: dir.y, y: 0 }
-            }
-            changeDirection = true
+        if (dir.x != 0) {
+            newDir = { x: 0, y: dir.x * -1 }
+        } else if (dir.y != 0) {
+            newDir = { x: dir.y, y: 0 }
         }
     }
 
     export function turnRight() {
-        if (!changeDirection) {
-            if (dir.x != 0) {
-                dir = { x: 0, y: dir.x }
-            } else if (dir.y != 0) {
-                dir = { x: dir.y * -1, y: 0 }
-            }
-            changeDirection = true
+        if (dir.x != 0) {
+            newDir = { x: 0, y: dir.x }
+        } else if (dir.y != 0) {
+            newDir = { x: dir.y * -1, y: 0 }
         }
     }
 
@@ -86,11 +72,22 @@ namespace snake {
         return egg
     }
 
-    export function mainLoop() {
+    export function init() {
+        gameOn = GameState.On
+        snake = [{ x: 2, y: 3 }, { x: 2, y: 4 }]
+        dir = { x: 1, y: 0 }
+        newDir = dir
+        speedSteps = 3
+        speed = speedSteps - 1
+        egg = genEgg()
+    }
+
+    export function gameStep() {
         let sleep = speed * 200 + 100
         show()
         basic.pause(sleep)
         if (gameOn == GameState.On) {
+            dir = newDir
             // move head
             let newHead = nextHead()
             let tail = snake.pop()
@@ -106,8 +103,6 @@ namespace snake {
                 egg = genEgg()
                 eggCollected = false
             }
-            // reinit state
-            changeDirection = false
         }
     }
 }
@@ -115,4 +110,5 @@ input.onPinPressed(TouchPin.P0, snake.switchState)
 input.onButtonPressed(Button.A, snake.turnLeft)
 input.onButtonPressed(Button.B, snake.turnRight)
 input.onPinPressed(TouchPin.P1, snake.stepSpeed)
-basic.forever(snake.mainLoop)
+basic.forever(snake.gameStep)
+snake.init()
