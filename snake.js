@@ -1,14 +1,10 @@
-input.onPinPressed(TouchPin.P0, function() {
-    if (gameOn == 1) {
-        gameOn = 0
-    } else {
-        gameOn = 1
-    }
+input.onPinPressed(TouchPin.P0, function () {
+    gameOn = !(gameOn)
 })
 input.onPinPressed(TouchPin.P1, function () {
-    speed = (speed + 1) % 3
+    speed = (speed + 1) % speedSteps
 })
-input.onButtonPressed(Button.A, function() {
+input.onButtonPressed(Button.A, function () {
     if (dx != 0) {
         dy = dx * -1
         dx = 0
@@ -17,7 +13,7 @@ input.onButtonPressed(Button.A, function() {
         dy = 0
     }
 })
-input.onButtonPressed(Button.B, function() {
+input.onButtonPressed(Button.B, function () {
     if (dx != 0) {
         dy = dx
         dx = 0
@@ -26,33 +22,39 @@ input.onButtonPressed(Button.B, function() {
         dy = 0
     }
 })
-function showPoints() {
-    for (let p of points) {
+function showSnake() {
+    for (let p of snake) {
         led.plot(p[0], p[1])
     }
 }
-
 let tick = 0
 let dy = 0
-let dx = 1
-let gameOn = 1
-let points = [[2, 3], [2, 4], [3,4]]
-let speed = 4;
-let head, x, y, tail, sleep
-basic.forever(function() {
+let speed = 0
+let speedSteps = 0
+let dx = 0
+let snake: number[][] = []
+let gameOn = false
+let head, x, y, nextHead, tail, sleep
+// init
+gameOn = true
+snake = [[2, 3], [2, 4]]
+dx = 1
+speedSteps = 3
+speed = speedSteps
+// game loop
+basic.forever(function () {
     sleep = speed * 200 + 100
-
-    showPoints()
+    showSnake()
     basic.pause(sleep)
-
     tick += 1
-    if (gameOn == 1 && tick % 2 == 0) {
-        tail = points.pop()
+    if (gameOn && tick % 2 == 0) {
+        // move head
+        head = snake[0]
+        x = ((head[0] + dx) % 5 + 5) % 5
+        y = ((head[1] + dy) % 5 + 5) % 5
+        nextHead = [x, y]
+        snake.unshift(nextHead)
+        tail = snake.pop()
         led.unplot(tail[0], tail[1])
-        //  move head
-        head = points[0]
-        x = (((head[0] + dx) % 5) + 5) % 5
-        y = (((head[1] + dy) % 5) + 5) % 5
-        points.unshift([x, y])
     }
 })
