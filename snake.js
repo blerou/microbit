@@ -10,19 +10,18 @@ namespace snake {
         readonly y: number;
     }
 
-    let dy = 0
+    let dir: point
     let changeDirection = false
     let speed = 0
     let speedSteps = 0
-    let dx = 0
     let gameOn = GameState.Paused
     let snake: point[] = []
-    let head, x, y, tail, sleep, nh
     let egg: point
+    let eggCollected = false
     // init
     gameOn = GameState.On
-    snake = [{x: 2, y: 3}, {x: 2, y: 4}]
-    dx = 1
+    snake = [{ x: 2, y: 3 }, { x: 2, y: 4 }]
+    dir = { x: 1, y: 0 }
     speedSteps = 3
     speed = speedSteps - 1
     egg = genEgg()
@@ -36,40 +35,45 @@ namespace snake {
     }
 
     export function turnLeft() {
-        if (!(changeDirection)) {
-            if (dx != 0) {
-                dy = dx * -1
-                dx = 0
-            } else if (dy != 0) {
-                dx = dy
-                dy = 0
+        if (!changeDirection) {
+            if (dir.x != 0) {
+                dir = { x: 0, y: dir.x * -1 }
+            } else if (dir.y != 0) {
+                dir = { x: dir.y, y: 0 }
             }
             changeDirection = true
         }
     }
 
     export function turnRight() {
-        if (dx != 0) {
-            dy = dx
-            dx = 0
-        } else if (dy != 0) {
-            dx = dy * -1
-            dy = 0
+        if (!changeDirection) {
+            if (dir.x != 0) {
+                dir = { x: 0, y: dir.x }
+            } else if (dir.y != 0) {
+                dir = { x: dir.y * -1, y: 0 }
+            }
+            changeDirection = true
         }
     }
 
     function show() {
+        // snake
         for (let p of snake) {
             led.plot(p.x, p.y)
         }
-        led.toggle(egg.x, egg.y)
+        // egg
+        if (eggCollected) {
+            led.plot(egg.x, egg.y)
+        } else {
+            led.toggle(egg.x, egg.y)
+        }
     }
 
     function nextHead() {
-        head = snake[0]
-        x = ((head.x + dx) % 5 + 5) % 5
-        y = ((head.y + dy) % 5 + 5) % 5
-        return {x: x, y: y}
+        let head = snake[0]
+        let x = ((head.x + dir.x) % 5 + 5) % 5
+        let y = ((head.y + dir.y) % 5 + 5) % 5
+        return { x: x, y: y }
     }
 
     function genEgg(): point {
@@ -77,21 +81,31 @@ namespace snake {
         do {
             x = Math.floor(Math.random() * 5)
             y = Math.floor(Math.random() * 5)
-            egg = {x: x, y: y}
+            egg = { x: x, y: y }
         } while (snake.indexOf(egg) >= 0)
         return egg
     }
 
     export function mainLoop() {
-        sleep = speed * 200 + 100
+        let sleep = speed * 200 + 100
         show()
         basic.pause(sleep)
         if (gameOn == GameState.On) {
             // move head
-            nh = nextHead()
-            snake.unshift(nh)
-            tail = snake.pop()
+            let newHead = nextHead()
+            let tail = snake.pop()
+            snake.unshift(newHead)
             led.unplot(tail.x, tail.y)
+            if (newHead.x == egg.x && newHead.y == egg.y) {
+                // TODO egg collected animation
+                // IDEA brighter snake with each egg collected
+                eggCollected = true
+            } else if (tail.x == egg.x && tail.y == egg.y) {
+                led.plot(egg.x, egg.y)
+                snake.push(egg)
+                egg = genEgg()
+                eggCollected = false
+            }
             // reinit state
             changeDirection = false
         }
