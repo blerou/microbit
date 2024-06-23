@@ -47,11 +47,15 @@ namespace snake {
         for (let p of snake) {
             led.plot(p.x, p.y)
         }
+        if (tail) {
+            led.unplot(tail.x, tail.y)
+            tail = null
+        }
         // egg
-        if (eggCollected) {
+        if (eggCollected || showEgg) {
             led.plot(egg.x, egg.y)
         } else {
-            led.toggle(egg.x, egg.y)
+            led.unplot(egg.x, egg.y)
         }
     }
 
@@ -72,6 +76,10 @@ namespace snake {
         return egg
     }
 
+    let tick: number
+    let showEgg: boolean
+    let tail: point = null
+
     export function init() {
         gameOn = GameState.On
         snake = [{ x: 2, y: 3 }, { x: 2, y: 4 }]
@@ -80,30 +88,35 @@ namespace snake {
         speedSteps = 3
         speed = speedSteps - 1
         egg = genEgg()
+        showEgg = true
+        tick = 0
     }
 
+
     export function gameStep() {
-        let sleep = speed * 200 + 100
         show()
-        basic.pause(sleep)
-        if (gameOn == GameState.On) {
+        basic.pause(100)
+        let snakeTicks = 1 + speed * 2
+        if (tick % 2 == 0) {
+            showEgg = !showEgg
+        }
+        if (gameOn == GameState.On && (tick % snakeTicks) == 0) {
             dir = newDir
             // move head
             let newHead = nextHead()
-            let tail = snake.pop()
+            tail = snake.pop()
             snake.unshift(newHead)
-            led.unplot(tail.x, tail.y)
             if (newHead.x == egg.x && newHead.y == egg.y) {
                 // TODO egg collected animation
                 // IDEA brighter snake with each egg collected
                 eggCollected = true
             } else if (tail.x == egg.x && tail.y == egg.y) {
-                led.plot(egg.x, egg.y)
-                snake.push(egg)
+                snake.push(tail)
                 egg = genEgg()
                 eggCollected = false
             }
         }
+        tick += 1
     }
 }
 input.onPinPressed(TouchPin.P0, snake.switchState)
