@@ -91,6 +91,11 @@ namespace snake {
         tick = 0
     }
 
+    // TODO win condition -> N long snake after egg "internalized"
+    // TODO win animation
+    // TODO lose condition -> snake bite itself
+    // TODO lose animation
+    // TODO replay back (A) and forth (B) ?
 
     export function gameStep() {
         show()
