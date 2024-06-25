@@ -117,12 +117,11 @@ namespace snake {
         speedLevels = [5, 3, 1]
         speed = initLevel
         gameWonAt = [9, 8, 7]
-        gameWonAt = [5, 5, 5] // testing
+        // gameWonAt = [5, 5, 5] // testing
         egg = genEgg()
         tick = 0
     }
 
-    // TODO(IDEA) lose animation
     // TODO(IDEA) replay back (A) and forth (B) ?
 
     export function gameStep() {
@@ -157,8 +156,8 @@ namespace snake {
                 tail = snake.pop()
                 snake.unshift(newHead)
                 if (newHead.x == egg.x && newHead.y == egg.y) {
-                    // TODO egg collected animation
-                    // IDEA brighter snake with each egg collected
+                    // TODO(IDEA) egg collected animation
+                    // TODO(IDEA) brighter snake with each egg collected
                     egg.collected = true
                 } else if (tail.x == egg.x && tail.y == egg.y) {
                     snake.push(tail)
