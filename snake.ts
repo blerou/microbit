@@ -31,8 +31,12 @@ namespace snake {
         gameOn = gameOn == GameState.Running ? GameState.Paused : GameState.Running
     }
 
-    export function nextLevel() {
-        speed = (speed + 1) % speedLevels.length
+    function nextLevel() {
+        return (speed + 1) % speedLevels.length
+    }
+
+    export function moveToNextLevel() {
+        speed = nextLevel()
     }
 
     export function turnLeft() {
@@ -68,11 +72,21 @@ namespace snake {
                 led.unplot(egg.x, egg.y)
             }
         } else if (gameOn == GameState.Win) {
-            // TODO win animation
-            basic.showString("W")
+            // TODO winning animation
+            let message = "level" + (speed+1) + "done"
+            basic.showString(message)
+            if (nextLevel() == 0) {
+                basic.showLeds(`
+                    # . # . #
+                    # # . # #
+                    . # # # .
+                    . . # . .
+                    . # # # .
+                `)
+            }
         } else if (gameOn == GameState.Lost) {
-            // TODO win animation
-            basic.showString("L")
+            // TODO losing animation
+            basic.showString(":(")
         }
     }
 
@@ -95,22 +109,20 @@ namespace snake {
     let tick: number
     let tail: point = null
 
-    export function init() {
+    export function init(initLevel: number) {
         gameOn = GameState.Running
         snake = [{ x: 2, y: 3 }, { x: 2, y: 4 }]
         dir = { x: 1, y: 0 }
         newDir = dir
         speedLevels = [5, 3, 1]
-        speed = 0
+        speed = initLevel
         gameWonAt = [9, 8, 7]
         gameWonAt = [5, 5, 5] // testing
         egg = genEgg()
         tick = 0
     }
 
-    // TODO(IDEA) after win at a level (speed) move to the next
-    // TODO lose animation
-    // TODO final animation after defeating the game at ultra speed
+    // TODO(IDEA) lose animation
     // TODO(IDEA) replay back (A) and forth (B) ?
 
     export function gameStep() {
@@ -119,7 +131,12 @@ namespace snake {
         basic.pause(100)
 
         if (gameOn == GameState.Win) {
-            gameOn = GameState.Halt
+            let next = nextLevel()
+            if (next == 0) {
+                gameOn = GameState.Halt
+            } else {
+                init(next)
+            }
         }
         if (gameOn == GameState.Lost) {
             gameOn = GameState.Halt
@@ -155,6 +172,6 @@ namespace snake {
 input.onPinPressed(TouchPin.P0, snake.pauseResumeGame)
 input.onButtonPressed(Button.A, snake.turnLeft)
 input.onButtonPressed(Button.B, snake.turnRight)
-input.onPinPressed(TouchPin.P1, snake.nextLevel)
+input.onPinPressed(TouchPin.P1, snake.moveToNextLevel)
 basic.forever(snake.gameStep)
-snake.init()
+snake.init(0)
