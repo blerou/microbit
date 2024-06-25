@@ -12,18 +12,18 @@ namespace snake {
 
     let dir: point, newDir: point
     let speed = 0
-    let speedSteps = 0
+    let speedLevels: number[] = []
     let gameOn = GameState.Paused
     let snake: point[] = []
     let egg: point
     let eggCollected = false
 
-    export function switchState() {
+    export function pauseResumeGame() {
         gameOn = gameOn == GameState.On ? GameState.Paused : GameState.On
     }
 
-    export function stepSpeed() {
-        speed = (speed + 1) % speedSteps
+    export function nextLevel() {
+        speed = (speed + 1) % speedLevels.length
     }
 
     export function turnLeft() {
@@ -84,8 +84,8 @@ namespace snake {
         snake = [{ x: 2, y: 3 }, { x: 2, y: 4 }]
         dir = { x: 1, y: 0 }
         newDir = dir
-        speedSteps = 3
-        speed = speedSteps - 1
+        speedLevels = [5, 3, 1]
+        speed = 0
         egg = genEgg()
         showEgg = true
         tick = 0
@@ -100,11 +100,10 @@ namespace snake {
     export function gameStep() {
         show()
         basic.pause(100)
-        let snakeTicks = 1 + speed * 2
         if (tick % 2 == 0) {
             showEgg = !showEgg
         }
-        if (gameOn == GameState.On && (tick % snakeTicks) == 0) {
+        if (gameOn == GameState.On && (tick % speedLevels[speed]) == 0) {
             dir = newDir
             // move head
             let newHead = nextHead()
@@ -123,9 +122,9 @@ namespace snake {
         tick += 1
     }
 }
-input.onPinPressed(TouchPin.P0, snake.switchState)
+input.onPinPressed(TouchPin.P0, snake.pauseResumeGame)
 input.onButtonPressed(Button.A, snake.turnLeft)
 input.onButtonPressed(Button.B, snake.turnRight)
-input.onPinPressed(TouchPin.P1, snake.stepSpeed)
+input.onPinPressed(TouchPin.P1, snake.nextLevel)
 basic.forever(snake.gameStep)
 snake.init()
