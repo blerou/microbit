@@ -67,13 +67,12 @@ namespace snake {
     }
 
     function genEgg(): point {
-        let egg: point, x: number, y: number
+        let x: number, y: number
         do {
             x = Math.floor(Math.random() * 5)
             y = Math.floor(Math.random() * 5)
-            egg = { x: x, y: y }
-        } while (snake.indexOf(egg) >= 0)
-        return egg
+        } while (snake.filter(el => el.x == x && el.y == y).length > 0)
+        return { x: x, y: y }
     }
 
     let tick: number
