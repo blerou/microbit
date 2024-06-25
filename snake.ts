@@ -92,9 +92,11 @@ namespace snake {
     }
 
     // TODO win condition -> N long snake after egg "internalized"
-    // TODO win animation
     // TODO lose condition -> snake bite itself
+    // TODO after win at a level (speed) move to the next
+    // TODO win animation
     // TODO lose animation
+    // TODO final animation after defeating the game at ultra speed
     // TODO replay back (A) and forth (B) ?
 
     export function gameStep() {
