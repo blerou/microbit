@@ -9,14 +9,19 @@ namespace snake {
         readonly x: number;
         readonly y: number;
     }
+    type egg = {
+        readonly x: number;
+        readonly y: number;
+        show: boolean;
+        collected: boolean;
+    }
 
     let dir: point, newDir: point
     let speed = 0
     let speedLevels: number[] = []
     let gameOn = GameState.Paused
     let snake: point[] = []
-    let egg: point
-    let eggCollected = false
+    let egg: egg
 
     export function pauseResumeGame() {
         gameOn = gameOn == GameState.On ? GameState.Paused : GameState.On
@@ -52,7 +57,7 @@ namespace snake {
             tail = null
         }
         // egg
-        if (eggCollected || showEgg) {
+        if (egg.collected || egg.show) {
             led.plot(egg.x, egg.y)
         } else {
             led.unplot(egg.x, egg.y)
@@ -66,13 +71,13 @@ namespace snake {
         return { x: x, y: y }
     }
 
-    function genEgg(): point {
+    function genEgg(): egg {
         let x: number, y: number
         do {
             x = Math.floor(Math.random() * 5)
             y = Math.floor(Math.random() * 5)
         } while (snake.filter(el => el.x == x && el.y == y).length > 0)
-        return { x: x, y: y }
+        return { x: x, y: y, show: true, collected: false }
     }
 
     let tick: number
@@ -87,7 +92,6 @@ namespace snake {
         speedLevels = [5, 3, 1]
         speed = 0
         egg = genEgg()
-        showEgg = true
         tick = 0
     }
 
@@ -97,13 +101,13 @@ namespace snake {
     // TODO win animation
     // TODO lose animation
     // TODO final animation after defeating the game at ultra speed
-    // TODO replay back (A) and forth (B) ?
+    // TODO(IDEA) replay back (A) and forth (B) ?
 
     export function gameStep() {
         show()
         basic.pause(100)
         if (tick % 2 == 0) {
-            showEgg = !showEgg
+            egg.show = !egg.show
         }
         if (gameOn == GameState.On && (tick % speedLevels[speed]) == 0) {
             dir = newDir
@@ -114,11 +118,10 @@ namespace snake {
             if (newHead.x == egg.x && newHead.y == egg.y) {
                 // TODO egg collected animation
                 // IDEA brighter snake with each egg collected
-                eggCollected = true
+                egg.collected = true
             } else if (tail.x == egg.x && tail.y == egg.y) {
                 snake.push(tail)
                 egg = genEgg()
-                eggCollected = false
             }
         }
         tick += 1
