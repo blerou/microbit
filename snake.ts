@@ -15,8 +15,6 @@ namespace snake {
     type egg = {
         readonly x: number;
         readonly y: number;
-        show: boolean;
-        collected: boolean;
     }
 
     let dir: point, newDir: point
@@ -55,22 +53,50 @@ namespace snake {
         }
     }
 
+    function nextHead() {
+        let head = snake[0]
+        let x = ((head.x + dir.x) % 5 + 5) % 5
+        let y = ((head.y + dir.y) % 5 + 5) % 5
+        return { x: x, y: y }
+    }
+
+    function genEgg(): egg {
+        let x: number, y: number
+        do {
+            x = Math.floor(Math.random() * 5)
+            y = Math.floor(Math.random() * 5)
+        } while (snake.filter(el => el.x == x && el.y == y).length > 0)
+        return { x: x, y: y }
+    }
+
+    let tick: number
+    let tail: point = null
+
+    export function init(initLevel: number) {
+        gameOn = GameState.Running
+        snake = [{ x: 2, y: 3 }, { x: 2, y: 4 }]
+        dir = { x: 1, y: 0 }
+        newDir = dir
+        speedLevels = [5, 3, 1]
+        speed = initLevel
+        gameWonAt = [9, 8, 7]
+        // gameWonAt = [5, 5, 5] // testing
+        egg = genEgg()
+        tick = 0
+    }
+
     function render() {
         if (gameOn == GameState.Running) {
             // snake
             for (let p of snake) {
-                led.plot(p.x, p.y)
+                led.plotBrightness(p.x, p.y, 7)
             }
             if (tail) {
                 led.unplot(tail.x, tail.y)
                 tail = null
             }
             // egg
-            if (egg.collected || egg.show) {
-                led.plot(egg.x, egg.y)
-            } else {
-                led.unplot(egg.x, egg.y)
-            }
+            led.plotBrightness(egg.x, egg.y, 31)
         } else if (gameOn == GameState.Win) {
             // TODO winning animation
             let message = "level" + (speed+1) + "done"
@@ -90,39 +116,6 @@ namespace snake {
         }
     }
 
-    function nextHead() {
-        let head = snake[0]
-        let x = ((head.x + dir.x) % 5 + 5) % 5
-        let y = ((head.y + dir.y) % 5 + 5) % 5
-        return { x: x, y: y }
-    }
-
-    function genEgg(): egg {
-        let x: number, y: number
-        do {
-            x = Math.floor(Math.random() * 5)
-            y = Math.floor(Math.random() * 5)
-        } while (snake.filter(el => el.x == x && el.y == y).length > 0)
-        return { x: x, y: y, show: true, collected: false }
-    }
-
-    let tick: number
-    let tail: point = null
-
-    export function init(initLevel: number) {
-        gameOn = GameState.Running
-        snake = [{ x: 2, y: 3 }, { x: 2, y: 4 }]
-        dir = { x: 1, y: 0 }
-        newDir = dir
-        speedLevels = [5, 3, 1]
-        speed = initLevel
-        gameWonAt = [9, 8, 7]
-        // gameWonAt = [5, 5, 5] // testing
-        egg = genEgg()
-        tick = 0
-    }
-
-
     // TODO(IDEA) egg highlight while going through the snake body
 
     // TODO(IDEA) replay back (A) and forth (B) ?
@@ -130,7 +123,7 @@ namespace snake {
     //   SnakePart: `u8` where
     //      - sp & 0b00111000 = x
     //      - sp & 0b00000111 = y
-    //      - sp & SP_HIDE    = hidden, SP_HIDE = 0b00000110
+    //      - sp & 0b01000000 = hidden
 
     export function gameStep() {
         render()
@@ -148,26 +141,17 @@ namespace snake {
         if (gameOn == GameState.Lost) {
             gameOn = GameState.Halt
         }
-        if (gameOn == GameState.Running && tick % 2 == 0) {
-            egg.show = !egg.show
-        }
         if (gameOn == GameState.Running && (tick % speedLevels[speed]) == 0) {
             dir = newDir
             let newHead = nextHead()
             if (snake.length == gameWonAt[speed]) {
                 gameOn = GameState.Win
-                egg.show = false
             } else if (snake.filter(p => p.x == newHead.x && p.y == newHead.y).length > 0) {
                 gameOn = GameState.Lost
-                egg.show = false
             } else {
                 tail = snake.pop()
                 snake.unshift(newHead)
-                if (newHead.x == egg.x && newHead.y == egg.y) {
-                    // TODO(IDEA) egg collected animation
-                    // TODO(IDEA) brighter snake with each egg collected
-                    egg.collected = true
-                } else if (tail.x == egg.x && tail.y == egg.y) {
+                if (tail.x == egg.x && tail.y == egg.y) {
                     snake.push(tail)
                     egg = genEgg()
                 }
