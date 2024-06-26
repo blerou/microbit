@@ -122,7 +122,15 @@ namespace snake {
         tick = 0
     }
 
+
+    // TODO(IDEA) egg highlight while going through the snake body
+
     // TODO(IDEA) replay back (A) and forth (B) ?
+    //   on history: to make it happen we have to introduce packing
+    //   SnakePart: `u8` where
+    //      - sp & 0b00111000 = x
+    //      - sp & 0b00000111 = y
+    //      - sp & SP_HIDE    = hidden, SP_HIDE = 0b00000110
 
     export function gameStep() {
         render()
