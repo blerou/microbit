@@ -8,96 +8,142 @@ namespace snake {
         Halt,
     }
 
-    interface point {
-        readonly x: number;
-        readonly y: number;
+    // points
+    type point = number
+    // type point = number[]
+    function point(_x: number, _y: number): point {
+        return ((_x << 3) & 0b00111000) | (_y & 0b00000111)
+        // return [_x, _y, 0]
     }
-    type egg = {
-        readonly x: number;
-        readonly y: number;
+    function x(p: point): number {
+        return ((p & 0b00111000) >> 3)
+        // return p[0]
+    }
+    function y(p: point): number {
+        return (p & 0b00000111)
+        // return p[1]
+    }
+    let _coord_mask = 0b00111000 | 0b00000111
+    function eq(p1: point, p2: point): boolean {
+        return (p1 & _coord_mask) == (p2 & _coord_mask)
+        // return p1[0] == p2[0] && p1[1] == p2[1]
     }
 
-    let dir: point, newDir: point
+    // flags
+    const enum flag {
+        HIDE = 0b01000000,
+        COLLECT = 0b10000000,
+    }
+    function on(p: point, f: flag) {
+        p |= f
+        // p[2] |= f
+    }
+    function off(p: point, f: flag) {
+        p &= ~f
+        // p[2] &= ~f
+    }
+    function is_on(p: point, f: flag): boolean {
+        return (p & f) > 0
+        // return (p[2] & f) > 0
+    }
+
+    enum direction {
+        UP = 0,
+        LEFT = 1,
+        DOWN = 2,
+        RIGHT = 3,
+    }
+    function dx(d: direction): number {
+        switch (d) {
+        case direction.UP:
+        case direction.DOWN: return 0
+        case direction.LEFT: return -1
+        case direction.RIGHT: return 1
+        }
+    }
+    function dy(d: direction): number {
+        switch (d) {
+        case direction.UP: return -1
+        case direction.DOWN: return 1
+        case direction.LEFT:
+        case direction.RIGHT: return 0
+        }
+    }
+
+    let dir: direction, next_dir: direction
     let speed = 0
-    let speedLevels: number[] = []
-    let gameWonAt: number[] = []
-    let gameOn = GameState.Paused
+    let speed_levels: number[] = []
+    let game_won_at: number[] = []
+    let game_on = GameState.Paused
     let snake: point[] = []
+
+    type egg = point
     let egg: egg
 
-    export function pauseResumeGame() {
-        gameOn = gameOn == GameState.Running ? GameState.Paused : GameState.Running
+    export function pause_resume_game() {
+        game_on = game_on == GameState.Running ? GameState.Paused : GameState.Running
     }
 
     function nextLevel() {
-        return (speed + 1) % speedLevels.length
+        return (speed + 1) % speed_levels.length
     }
 
-    export function moveToNextLevel() {
+    export function move_to_next_level() {
         speed = nextLevel()
     }
 
-    export function turnLeft() {
-        if (dir.x != 0) {
-            newDir = { x: 0, y: dir.x * -1 }
-        } else if (dir.y != 0) {
-            newDir = { x: dir.y, y: 0 }
-        }
+    export function turn_left() {
+        next_dir = (dir + 1) % 4
     }
 
-    export function turnRight() {
-        if (dir.x != 0) {
-            newDir = { x: 0, y: dir.x }
-        } else if (dir.y != 0) {
-            newDir = { x: dir.y * -1, y: 0 }
-        }
+    export function turn_right() {
+        next_dir = (dir - 1 + 4) % 4
     }
 
-    function nextHead() {
-        let head = snake[0]
-        let x = ((head.x + dir.x) % 5 + 5) % 5
-        let y = ((head.y + dir.y) % 5 + 5) % 5
-        return { x: x, y: y }
-    }
-
-    function genEgg(): egg {
-        let x: number, y: number
+    function gen_egg() {
+        let _x: number, _y: number
         do {
-            x = Math.floor(Math.random() * 5)
-            y = Math.floor(Math.random() * 5)
-        } while (snake.filter(el => el.x == x && el.y == y).length > 0)
-        return { x: x, y: y }
+            _x = Math.floor(Math.random() * 5)
+            _y = Math.floor(Math.random() * 5)
+            egg = point(_x, _y)
+        } while (snake.filter(p => eq(p, egg)).length > 0)
     }
 
     let tick: number
     let tail: point = null
 
-    export function init(initLevel: number) {
-        gameOn = GameState.Running
-        snake = [{ x: 2, y: 3 }, { x: 2, y: 4 }]
-        dir = { x: 1, y: 0 }
-        newDir = dir
-        speedLevels = [5, 3, 1]
-        speed = initLevel
-        gameWonAt = [9, 8, 7]
-        // gameWonAt = [5, 5, 5] // testing
-        egg = genEgg()
+    export function init(init_level: number) {
+        game_on = GameState.Running
+        snake = [point(2, 3), point(2, 4)]
+        dir = direction.RIGHT
+        next_dir = dir
+        speed_levels = [5, 3, 1]
+        speed = init_level
+        game_won_at = [9, 8, 7]
+        // game_won_at = [5, 5, 5] // testing
+        gen_egg()
         tick = 0
     }
 
     function render() {
-        if (gameOn == GameState.Running) {
+        if (game_on == GameState.Running) {
+            let _x: number, _y: number
             // snake
             for (let p of snake) {
-                led.plotBrightness(p.x, p.y, 7)
+                _x = x(p)
+                _y = y(p)
+                led.plotBrightness(_x, _y, 7)
             }
             if (tail) {
-                led.unplot(tail.x, tail.y)
+                _x = x(tail)
+                _y = y(tail)
+                led.unplot(_x, _y)
                 tail = null
             }
             // egg
-            led.plotBrightness(egg.x, egg.y, 31)
-        } else if (gameOn == GameState.Win) {
+            let brightness = is_on(egg, flag.COLLECT) ? 15 : 31
+            led.plotBrightness(x(egg), y(egg), brightness)
+        } else if (game_on == GameState.Win) {
             // TODO winning animation
             let message = "level" + (speed+1) + "done"
             basic.showString(message)
@@ -110,59 +156,63 @@ namespace snake {
                     . # # # .
                 `)
             }
-        } else if (gameOn == GameState.Lost) {
+        } else if (game_on == GameState.Lost) {
             // TODO losing animation
             basic.showString(":(")
         }
     }
 
-    // TODO(IDEA) egg highlight while going through the snake body
-
     // TODO(IDEA) replay back (A) and forth (B) ?
-    //   on history: to make it happen we have to introduce packing
-    //   SnakePart: `u8` where
-    //      - sp & 0b00111000 = x
-    //      - sp & 0b00000111 = y
-    //      - sp & 0b01000000 = hidden
 
-    export function gameStep() {
+    export function game_step() {
         render()
 
         basic.pause(100)
 
-        if (gameOn == GameState.Win) {
+        if (game_on == GameState.Win) {
             let next = nextLevel()
             if (next == 0) {
-                gameOn = GameState.Halt
+                game_on = GameState.Halt
             } else {
                 init(next)
             }
         }
-        if (gameOn == GameState.Lost) {
-            gameOn = GameState.Halt
+        if (game_on == GameState.Lost) {
+            game_on = GameState.Halt
         }
-        if (gameOn == GameState.Running && (tick % speedLevels[speed]) == 0) {
-            dir = newDir
-            let newHead = nextHead()
-            if (snake.length == gameWonAt[speed]) {
-                gameOn = GameState.Win
-            } else if (snake.filter(p => p.x == newHead.x && p.y == newHead.y).length > 0) {
-                gameOn = GameState.Lost
+        if (game_on == GameState.Running && (tick % speed_levels[speed]) == 0) {
+            dir = next_dir
+
+            let head = snake[0]
+            let _x = (x(head) + dx(dir) + 5) % 5
+            let _y = (y(head) + dy(dir) + 5) % 5
+            let next_head = point(_x, _y)
+
+            if (snake.length == game_won_at[speed]) {
+                game_on = GameState.Win
+            } else if (snake.filter(p => eq(p, next_head)).length > 0) {
+                game_on = GameState.Lost
             } else {
+                // snake = snake.filter(el => !is_on(el, flag.HIDE))
                 tail = snake.pop()
-                snake.unshift(newHead)
-                if (tail.x == egg.x && tail.y == egg.y) {
-                    snake.push(tail)
-                    egg = genEgg()
+                // on(tail, flag.HIDE)
+                snake.unshift(next_head)
+                if (eq(next_head, egg)) {
+                    on(egg, flag.COLLECT)
+                }
+                if (eq(tail, egg)) {
+                    // off(tail, flag.HIDE)
+                    snake.push(egg)
+                    gen_egg()
                 }
             }
         }
         tick += 1
     }
 }
-input.onPinPressed(TouchPin.P0, snake.pauseResumeGame)
-input.onButtonPressed(Button.A, snake.turnLeft)
-input.onButtonPressed(Button.B, snake.turnRight)
-input.onPinPressed(TouchPin.P1, snake.moveToNextLevel)
-basic.forever(snake.gameStep)
 snake.init(0)
+input.onPinPressed(TouchPin.P0, snake.pause_resume_game)
+input.onButtonPressed(Button.A, snake.turn_left)
+input.onButtonPressed(Button.B, snake.turn_right)
+input.onPinPressed(TouchPin.P1, snake.move_to_next_level)
+basic.forever(snake.game_step)
