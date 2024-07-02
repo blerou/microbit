@@ -160,6 +160,19 @@ namespace snake {
         tick = 0
     }
 
+    let snake_pattern: number[][] = [
+        [],
+        [1],
+        [50, 30],
+        [50, 30, 10],
+        [50, 30, 20, 10],
+        [50, 40, 30, 20, 10],
+        [50, 40, 30, 40, 20, 10],
+        [50, 40, 30, 40, 30, 20, 10],
+        [50, 40, 30, 40, 30, 40, 20, 10],
+        [50, 40, 30, 40, 30, 40, 30, 20, 10],
+        [50, 40, 30, 40, 30, 40, 30, 40,  20, 10],
+    ]
     function render() {
         if (game_on == GameState.Running) {
             let _x: number, _y: number
@@ -170,11 +183,11 @@ namespace snake {
                 if (is_on(snake[i], flag.HIDE)) {
                     led.unplot(_x, _y)
                 } else {
-                    led.plotBrightness(_x, _y, 31-i*5)
+                    led.plotBrightness(_x, _y, snake_pattern[i % snake_pattern.length])
                 }
             }
             // egg
-            let brightness = is_on(egg, flag.COLLECT) || tick % 2 == 0 ? 31 : 63
+            let brightness = is_on(egg, flag.COLLECT) ? 50 : (tick % 2 == 0 ? 31 : 63)
             led.plotBrightness(x(egg), y(egg), brightness)
         } else if (game_on == GameState.Win) {
             // TODO winning animation
