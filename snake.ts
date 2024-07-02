@@ -30,10 +30,12 @@ namespace snake {
     function on(p: point, f: flag) {
         p |= f
         // p[2] |= f
+        return p
     }
     function off(p: point, f: flag) {
         p &= ~f
         // p[2] &= ~f
+        return p
     }
     function is_on(p: point, f: flag): boolean {
         return (p & f) > 0
@@ -120,23 +122,24 @@ namespace snake {
 
     // SNAKE =================================================
     let snake: point[] = []
-    let tail: point = null
     function next_snake() {
-        let head = snake[0]
-        let _x = (x(head) + dx(dir) + 5) % 5
-        let _y = (y(head) + dy(dir) + 5) % 5
+        snake = snake.filter(el => !is_on(el, flag.HIDE))
+
+        let head = 0
+        let _x = (x(snake[head]) + dx(dir) + 5) % 5
+        let _y = (y(snake[head]) + dy(dir) + 5) % 5
         let next_head = point(_x, _y)
-        // snake = snake.filter(el => !is_on(el, flag.HIDE))
-        tail = snake.pop()
-        // on(tail, flag.HIDE)
         snake.unshift(next_head)
-        if (eq(next_head, egg)) {
-            on(egg, flag.COLLECT)
+
+        if (eq(snake[head], egg)) {
+            egg = on(egg, flag.COLLECT)
         }
-        if (eq(tail, egg)) {
-            // off(tail, flag.HIDE)
-            snake.push(egg)
+
+        let tail = snake.length - 1
+        if (eq(snake[tail], egg)) {
             gen_egg()
+        } else {
+            snake[tail] = on(snake[tail], flag.HIDE)
         }
     }
     // END SNAKE =============================================
@@ -161,19 +164,17 @@ namespace snake {
         if (game_on == GameState.Running) {
             let _x: number, _y: number
             // snake
-            for (let p of snake) {
-                _x = x(p)
-                _y = y(p)
-                led.plotBrightness(_x, _y, 7)
-            }
-            if (tail) {
-                _x = x(tail)
-                _y = y(tail)
-                led.unplot(_x, _y)
-                tail = null
+            for (let i = 0; i < snake.length; i++) {
+                _x = x(snake[i])
+                _y = y(snake[i])
+                if (is_on(snake[i], flag.HIDE)) {
+                    led.unplot(_x, _y)
+                } else {
+                    led.plotBrightness(_x, _y, 31-i*5)
+                }
             }
             // egg
-            let brightness = is_on(egg, flag.COLLECT) ? 15 : 31
+            let brightness = is_on(egg, flag.COLLECT) || tick % 2 == 0 ? 31 : 63
             led.plotBrightness(x(egg), y(egg), brightness)
         } else if (game_on == GameState.Win) {
             // TODO winning animation
@@ -190,14 +191,13 @@ namespace snake {
             }
         } else if (game_on == GameState.Lost) {
             // TODO losing animation
-                basic.showLeds(`
-                    . . . . .
-                    . # . # .
-                    . . . . .
-                    . # # # .
-                    # . . . #
-               `)
-            basic.showString(":(")
+            basic.showLeds(`
+                . . . . .
+                . # . # .
+                . . . . .
+                . # # # .
+                # . . . #
+            `)
         }
     }
 
